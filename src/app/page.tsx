@@ -108,9 +108,13 @@ function CreateUser() {
 }
 
 function DeleteUsers() {
+  const util = useQueryClient();
   const { mutate, isPending, error } = useMutation({
     mutationFn: () => {
-      return fetch("/api/delete/", { method: "DELETE" });
+      return fetch("/api/user", { method: "DELETE" });
+    },
+    onSuccess: () => {
+      util.invalidateQueries({ queryKey: ["userData"] });
     },
   });
 

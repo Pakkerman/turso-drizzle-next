@@ -14,3 +14,7 @@ export async function insertUser(data: InsertUser): Promise<string> {
 export async function selectAll(): Promise<Array<SelectUser>> {
   return await db.select().from(users).orderBy(desc(users.createdAt));
 }
+
+export async function deleteAll(): Promise<void> {
+  await db.delete(users);
+}
