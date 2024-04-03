@@ -4,7 +4,9 @@ import { SelectUser } from "@/db/schema";
 import {
   QueryClient,
   QueryClientProvider,
+  useMutation,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -46,46 +48,52 @@ function UserList() {
 
 function CreateUser() {
   const [pre, setPre] = useState<string>("");
+  const queryUtil = useQueryClient();
+  const { mutate, isPending } = useMutation({
+    mutationFn: (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const data = Object.fromEntries(
+        new FormData(event.target as HTMLFormElement),
+      );
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+      return fetch("/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: async (response) => {
+      queryUtil.invalidateQueries({ queryKey: ["userData"] });
 
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData);
-    const endpoint = "api/user";
+      setPre(JSON.stringify(await response.json(), null, 4));
+    },
+  });
 
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    };
-
-    const response = await fetch(endpoint, options);
-    const json = await response.json();
-    setPre(JSON.stringify(json, null, 4));
-  };
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <form onSubmit={mutate} className="flex flex-col gap-2">
         <input
           type="text"
           name="name"
           placeholder="name"
+          defaultValue={`user-${(Math.random() * 1000).toFixed(0)}`}
           className="rounded-md p-2 text-gray-800"
         />
         <input
           type="text"
           name="email"
           placeholder="email"
+          defaultValue={`${(Math.random() * 1000).toFixed(0)}@pemil.com`}
           className="rounded-md p-2 text-gray-800"
         />
         <button
-          className="border-[1px] hover:border-gray-500 border-white rounded-xl p-2"
+          className="border-[1px] hover:border-gray-500 border-white rounded-xl p-2 disabled:border-red-500"
           type="submit"
+          disabled={isPending}
         >
-          Create a User
+          {isPending ? "Creating..." : "Create a User"}
         </button>
       </form>
       <pre className="text-xs">log: {pre}</pre>
