@@ -1,6 +1,7 @@
 "use client";
 
 import { SelectUser } from "@/db/schema";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
   QueryClient,
   QueryClientProvider,
@@ -19,12 +20,14 @@ export default function Home() {
         <h1 className="text-xl font-bold">Testing Drizzle with Turso</h1>
         <UserList />
         <CreateUser />
+        <DeleteUsers />
       </QueryClientProvider>
     </main>
   );
 }
 
 function UserList() {
+  const [animateParent] = useAutoAnimate();
   const { isPending, error, data } = useQuery({
     queryKey: ["userData"],
     queryFn: () => fetch("/api/user").then((res) => res.json()),
@@ -36,7 +39,10 @@ function UserList() {
   return (
     <>
       <h1>List of users:</h1>
-      <ul className="h-44 overflow-scroll">
+      <ul
+        ref={animateParent}
+        className="h-44 flex flex-col-reverse overflow-scroll"
+      >
         {data &&
           data.map((item: SelectUser, idx: number) => (
             <li key={`user-${idx}`}>{`id: ${item.id}, name: ${item.name}`}</li>
@@ -98,5 +104,23 @@ function CreateUser() {
       </form>
       <pre className="text-xs">log: {pre}</pre>
     </>
+  );
+}
+
+function DeleteUsers() {
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: () => {
+      return fetch("/api/delete/", { method: "DELETE" });
+    },
+  });
+
+  return (
+    <button
+      className="border-[1px] hover:border-gray-500 border-white rounded-xl p-2 disabled:border-red-500"
+      onClick={() => mutate()}
+      // disabled={isPending}
+    >
+      {false ? "Deleting..." : "delete all"}
+    </button>
   );
 }
